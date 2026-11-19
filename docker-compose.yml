@@ -1,0 +1,15 @@
+# Opcional: SQL Server en Docker, si no usás LocalDB ni un SQL Server propio.
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: citas-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Citas#2026Dev"
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - citas_sql:/var/opt/mssql
+volumes:
+  citas_sql:

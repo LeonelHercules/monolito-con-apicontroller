@@ -1,0 +1,159 @@
+@base = http://localhost:5080
+
+### 1. Crear médico. La colegiación sale en mayúsculas y el correo en minúsculas
+# @name crearMedico
+POST {{base}}/api/medicos
+Content-Type: application/json
+
+{
+  "nombres": "Ana María",
+  "apellidos": "Zelaya Pineda",
+  "especialidad": "Pediatría",
+  "numeroColegiacion": "cmh-12345",
+  "telefono": "9988-7766",
+  "correo": "Ana.Zelaya@Clinica.hn"
+}
+
+### 2. Obtener el médico que acabás de crear
+GET {{base}}/api/medicos/{{crearMedico.response.body.$.id}}
+
+### 3. Listar con filtro
+GET {{base}}/api/medicos?buscar=zelaya&activo=true
+
+### 4. Actualizar
+PUT {{base}}/api/medicos/{{crearMedico.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "nombres": "Ana María",
+  "apellidos": "Zelaya Pineda",
+  "especialidad": "Pediatría Neonatal",
+  "numeroColegiacion": "CMH-12345",
+  "telefono": "9988-7766",
+  "correo": "ana.zelaya@clinica.hn"
+}
+
+### 5. Error 400: campos vacíos y correo inválido
+POST {{base}}/api/medicos
+Content-Type: application/json
+
+{ "nombres": "", "apellidos": "Pérez", "especialidad": "", "numeroColegiacion": "CMH-999", "correo": "no-es-correo" }
+
+### 6. Error 409: colegiación repetida, escrita distinto
+POST {{base}}/api/medicos
+Content-Type: application/json
+
+{ "nombres": "Otro", "apellidos": "Médico", "especialidad": "General", "numeroColegiacion": " Cmh-12345 " }
+
+### 7. Error 404: id que no existe
+GET {{base}}/api/medicos/00000000-0000-0000-0000-000000000001
+
+### 8. Error 422: activar un médico que ya está activo
+PATCH {{base}}/api/medicos/{{crearMedico.response.body.$.id}}/activar
+
+### 9. Tomar el primer médico activo para las pruebas de citas
+# @name medicos
+GET {{base}}/api/medicos?activo=true
+
+### 10. Programar una cita de 9:00 a 9:30
+# @name crearCita
+POST {{base}}/api/citas
+Content-Type: application/json
+
+{
+  "medicoId": "{{medicos.response.body.$.items[0].id}}",
+  "pacienteNombre": "Carlos Mejía",
+  "pacienteIdentidad": "0801-1990-12345",
+  "pacienteTelefono": "3344-5566",
+  "pacienteCorreo": null,
+  "fechaHoraInicio": "2030-03-04T09:00:00",
+  "duracionMinutos": 30,
+  "motivo": "Control general",
+  "notas": null
+}
+
+### 11. Otra cita pegada, de 9:30 a 10:00: no se traslapa y tiene que funcionar
+# @name segundaCita
+POST {{base}}/api/citas
+Content-Type: application/json
+
+{
+  "medicoId": "{{medicos.response.body.$.items[0].id}}",
+  "pacienteNombre": "María López",
+  "pacienteIdentidad": "0801198554321",
+  "fechaHoraInicio": "2030-03-04T09:30:00",
+  "duracionMinutos": 30,
+  "motivo": "Primera consulta"
+}
+
+### 12. Error 409: a las 9:15 choca con las dos
+POST {{base}}/api/citas
+Content-Type: application/json
+
+{
+  "medicoId": "{{medicos.response.body.$.items[0].id}}",
+  "pacienteNombre": "Pedro Rivera",
+  "pacienteIdentidad": "0501-2000-11111",
+  "fechaHoraInicio": "2030-03-04T09:15:00",
+  "duracionMinutos": 30,
+  "motivo": "Dolor de cabeza"
+}
+
+### 13. Error 422: fecha en el pasado
+POST {{base}}/api/citas
+Content-Type: application/json
+
+{
+  "medicoId": "{{medicos.response.body.$.items[0].id}}",
+  "pacienteNombre": "Pedro Rivera",
+  "pacienteIdentidad": "0501-2000-11111",
+  "fechaHoraInicio": "2020-01-01T09:00:00",
+  "duracionMinutos": 30,
+  "motivo": "Dolor de cabeza"
+}
+
+### 14. Error 400: identidad con formato inválido
+POST {{base}}/api/citas
+Content-Type: application/json
+
+{
+  "medicoId": "{{medicos.response.body.$.items[0].id}}",
+  "pacienteNombre": "Pedro Rivera",
+  "pacienteIdentidad": "12345",
+  "fechaHoraInicio": "2030-03-04T11:00:00",
+  "duracionMinutos": 30,
+  "motivo": "Dolor de cabeza"
+}
+
+### 15. Confirmar la primera cita
+POST {{base}}/api/citas/{{crearCita.response.body.$.id}}/confirmar
+
+### 16. Error 422: confirmarla otra vez
+POST {{base}}/api/citas/{{crearCita.response.body.$.id}}/confirmar
+
+### 17. Reprogramarla a las 11:00. Mirá el estado: vuelve a Programada
+PUT {{base}}/api/citas/{{crearCita.response.body.$.id}}/reprogramar
+Content-Type: application/json
+
+{ "fechaHoraInicio": "2030-03-04T11:00:00", "duracionMinutos": 45 }
+
+### 18. Agenda del día
+GET {{base}}/api/medicos/{{medicos.response.body.$.items[0].id}}/agenda?fecha=2030-03-04
+
+### 19. Buscar por paciente, con la identidad escrita sin guiones
+GET {{base}}/api/citas?pacienteIdentidad=0801199012345
+
+### 20. Cancelar la primera cita
+POST {{base}}/api/citas/{{crearCita.response.body.$.id}}/cancelar
+Content-Type: application/json
+
+{ "motivo": "El paciente pidió cancelar" }
+
+### 21. Error 409: desactivar al médico, que todavía tiene pendiente la cita de 9:30
+PATCH {{base}}/api/medicos/{{medicos.response.body.$.items[0].id}}/desactivar
+
+### 22. Error 422: completar una cita que todavía no empezó
+POST {{base}}/api/citas/{{segundaCita.response.body.$.id}}/completar
+Content-Type: application/json
+
+{ "notas": null }
