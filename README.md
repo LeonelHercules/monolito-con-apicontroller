@@ -89,9 +89,9 @@ Los controladores siguen siendo delgados: traducen HTTP a un mensaje de MediatR 
 
 | Paquete | Versión | Nota |
 | --- | --- | --- |
-| `Microsoft.EntityFrameworkCore.*` | 10.0.10 | Visual Studio puede ofrecerte actualizar a un parche 10.0.x más nuevo |
+| `Microsoft.EntityFrameworkCore.*` | 10.0.15 | **No bajar de 10.0.15**: las anteriores resuelven `Microsoft.Data.SqlClient` 6.1.1, que arrastra un `System.Security.Cryptography.Pkcs` con vulnerabilidad conocida ([GHSA-846f-f764-76mx](https://github.com/advisories/GHSA-846f-f764-76mx)) |
 | `MediatR` | 12.4.1 | **No actualizar a 13+**: desde la v13 la licencia es comercial |
-| `FluentValidation.DependencyInjectionExtensions` | 12.0.0 | |
+| `FluentValidation.DependencyInjectionExtensions` | 12.2.0 | |
 | `Scalar.AspNetCore` | 2.* | Toma la última 2.x |
 
 ## Errores comunes
